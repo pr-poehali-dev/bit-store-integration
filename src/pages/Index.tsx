@@ -29,7 +29,59 @@ interface Beat {
   image: string;
   duration: string;
   tags: string[];
+  licenses: {
+    wav: number;
+    stems: number;
+    exclusive: number;
+  };
 }
+
+interface License {
+  type: "wav" | "stems" | "exclusive";
+  name: string;
+  description: string;
+  features: string[];
+  icon: string;
+}
+
+const licenseTypes: License[] = [
+  {
+    type: "wav",
+    name: "WAV License",
+    description: "Стандартная лицензия для коммерческого использования",
+    features: [
+      "Высокое качество WAV",
+      "До 10,000 копий",
+      "Радио трансляция",
+      "Интернет потоки",
+    ],
+    icon: "Music",
+  },
+  {
+    type: "stems",
+    name: "STEMS License",
+    description: "Разделённые дорожки для полного контроля",
+    features: [
+      "Все элементы отдельно",
+      "Полный микс",
+      "Неограниченные копии",
+      "Коммерческое использование",
+    ],
+    icon: "Layers",
+  },
+  {
+    type: "exclusive",
+    name: "EXCLUSIVE License",
+    description: "Эксклюзивные права на трек",
+    features: [
+      "Только вы можете использовать",
+      "Все форматы включены",
+      "Неограниченные права",
+      "Передача авторских прав",
+    ],
+    icon: "Crown",
+  },
+];
 
 const beats: Beat[] = [
   {
@@ -42,6 +94,11 @@ const beats: Beat[] = [
     image: "/img/5a69f4f0-8da3-4989-b1e1-4bac6e5262d9.jpg",
     duration: "3:42",
     tags: ["Dark", "Trap", "Hard"],
+    licenses: {
+      wav: 2500,
+      stems: 7500,
+      exclusive: 25000,
+    },
   },
   {
     id: 2,
@@ -53,6 +110,11 @@ const beats: Beat[] = [
     image: "/img/bce528bf-c271-4b88-a602-d5363e4e0321.jpg",
     duration: "4:15",
     tags: ["Hip-Hop", "Melodic", "Boom-Bap"],
+    licenses: {
+      wav: 3000,
+      stems: 9000,
+      exclusive: 30000,
+    },
   },
   {
     id: 3,
@@ -64,6 +126,11 @@ const beats: Beat[] = [
     image: "/img/3b92e4aa-1817-4b89-a504-29785005b172.jpg",
     duration: "3:28",
     tags: ["Electronic", "Synthwave", "Ambient"],
+    licenses: {
+      wav: 2000,
+      stems: 6000,
+      exclusive: 20000,
+    },
   },
   {
     id: 4,
@@ -75,6 +142,11 @@ const beats: Beat[] = [
     image: "/img/5a69f4f0-8da3-4989-b1e1-4bac6e5262d9.jpg",
     duration: "3:55",
     tags: ["Trap", "Urban", "Bass"],
+    licenses: {
+      wav: 2800,
+      stems: 8400,
+      exclusive: 28000,
+    },
   },
   {
     id: 5,
@@ -86,6 +158,11 @@ const beats: Beat[] = [
     image: "/img/bce528bf-c271-4b88-a602-d5363e4e0321.jpg",
     duration: "4:32",
     tags: ["R&B", "Smooth", "Groove"],
+    licenses: {
+      wav: 3500,
+      stems: 10500,
+      exclusive: 35000,
+    },
   },
   {
     id: 6,
@@ -97,6 +174,11 @@ const beats: Beat[] = [
     image: "/img/3b92e4aa-1817-4b89-a504-29785005b172.jpg",
     duration: "3:18",
     tags: ["Electronic", "Future", "Bass"],
+    licenses: {
+      wav: 2200,
+      stems: 6600,
+      exclusive: 22000,
+    },
   },
 ];
 
@@ -105,6 +187,10 @@ const Index = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [cart, setCart] = useState<Beat[]>([]);
   const [volume, setVolume] = useState([75]);
+  const [progress, setProgress] = useState([0]);
+  const [isLooping, setIsLooping] = useState(false);
+  const [currentTime, setCurrentTime] = useState("0:00");
+  const [totalTime, setTotalTime] = useState("0:00");
 
   const togglePlay = (beat: Beat) => {
     if (currentBeat?.id === beat.id) {
@@ -127,6 +213,24 @@ const Index = () => {
 
   const getTotalPrice = () => {
     return cart.reduce((total, beat) => total + beat.price, 0);
+  };
+
+  const skipBackward = () => {
+    setProgress([Math.max(0, progress[0] - 10)]);
+  };
+
+  const skipForward = () => {
+    setProgress([Math.min(100, progress[0] + 10)]);
+  };
+
+  const toggleLoop = () => {
+    setIsLooping(!isLooping);
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -217,28 +321,81 @@ const Index = () => {
       {currentBeat && (
         <div className="bg-card border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between py-4">
-              <div className="flex items-center space-x-4">
-                <img
-                  src={currentBeat.image}
-                  alt={currentBeat.title}
-                  className="w-12 h-12 rounded object-cover"
-                />
-                <div>
-                  <h3 className="font-medium">{currentBeat.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {currentBeat.artist}
-                  </p>
+            <div className="py-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={currentBeat.image}
+                    alt={currentBeat.title}
+                    className="w-12 h-12 rounded object-cover"
+                  />
+                  <div>
+                    <h3 className="font-medium">{currentBeat.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {currentBeat.artist}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addToCart(currentBeat)}
+                    disabled={cart.some((item) => item.id === currentBeat.id)}
+                  >
+                    {cart.some((item) => item.id === currentBeat.id) ? (
+                      <Icon name="Check" size={16} />
+                    ) : (
+                      <Icon name="ShoppingCart" size={16} />
+                    )}
+                  </Button>
+                  <span className="text-sm font-semibold text-primary">
+                    ₽{currentBeat.price}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => togglePlay(currentBeat)}
-                >
-                  <Icon name={isPlaying ? "Pause" : "Play"} size={20} />
-                </Button>
+
+              {/* Progress Bar */}
+              <div className="flex items-center space-x-3 mb-3">
+                <span className="text-sm text-muted-foreground min-w-[40px]">
+                  {currentTime}
+                </span>
+                <Slider
+                  value={progress}
+                  onValueChange={setProgress}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                />
+                <span className="text-sm text-muted-foreground min-w-[40px]">
+                  {totalTime || currentBeat.duration}
+                </span>
+              </div>
+
+              {/* Player Controls */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Button variant="ghost" size="sm" onClick={skipBackward}>
+                    <Icon name="SkipBack" size={16} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => togglePlay(currentBeat)}
+                  >
+                    <Icon name={isPlaying ? "Pause" : "Play"} size={20} />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={skipForward}>
+                    <Icon name="SkipForward" size={16} />
+                  </Button>
+                  <Button
+                    variant={isLooping ? "default" : "ghost"}
+                    size="sm"
+                    onClick={toggleLoop}
+                  >
+                    <Icon name="Repeat" size={16} />
+                  </Button>
+                </div>
                 <div className="flex items-center space-x-2">
                   <Icon name="Volume2" size={16} />
                   <Slider
@@ -275,6 +432,61 @@ const Index = () => {
               <Icon name="Info" size={20} className="mr-2" />
               Подробнее
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* License Types */}
+      <section className="py-16 bg-secondary/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-display font-bold mb-4">
+              Типы лицензий
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Выберите подходящий тариф для вашего проекта
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {licenseTypes.map((license) => (
+              <Card
+                key={license.type}
+                className="text-center hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                <CardHeader>
+                  <div className="flex justify-center mb-4">
+                    <div className="p-4 bg-primary/10 rounded-full">
+                      <Icon
+                        name={license.icon as any}
+                        size={32}
+                        className="text-primary"
+                      />
+                    </div>
+                  </div>
+                  <CardTitle className="text-xl">{license.name}</CardTitle>
+                  <CardDescription className="text-sm">
+                    {license.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm">
+                    {license.features.map((feature, index) => (
+                      <li
+                        key={index}
+                        className="flex items-center justify-center"
+                      >
+                        <Icon
+                          name="Check"
+                          size={16}
+                          className="text-green-500 mr-2"
+                        />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -350,14 +562,14 @@ const Index = () => {
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <Icon name="Clock" size={14} />
                       <span>{beat.duration}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-xl font-bold text-primary">
-                        ₽{beat.price}
+                        от ₽{beat.licenses.wav}
                       </span>
                       <Button
                         size="sm"
@@ -370,6 +582,35 @@ const Index = () => {
                           <Icon name="ShoppingCart" size={16} />
                         )}
                       </Button>
+                    </div>
+                  </div>
+
+                  {/* License Options */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 bg-secondary/50 rounded text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Icon name="Music" size={14} />
+                        <span>WAV</span>
+                      </div>
+                      <span className="font-medium">₽{beat.licenses.wav}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-secondary/50 rounded text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Icon name="Layers" size={14} />
+                        <span>STEMS</span>
+                      </div>
+                      <span className="font-medium">
+                        ₽{beat.licenses.stems}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-secondary/50 rounded text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Icon name="Crown" size={14} />
+                        <span>EXCLUSIVE</span>
+                      </div>
+                      <span className="font-medium">
+                        ₽{beat.licenses.exclusive}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
